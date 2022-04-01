@@ -1,6 +1,7 @@
 /target
 Cargo.lock
 lib/index.node
+wasm
 
 # Added by cargo
 #

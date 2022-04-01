@@ -1,0 +1,16 @@
+{
+  "name": "rollbar-sdk-node",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.node",
+  "scripts": {
+    "build": "cargo-cp-artifact -a cdylib rollbar-sdk index.node -- cargo build --features node --manifest-path ../Cargo.toml --message-format=json-render-diagnostics",
+    "build-debug": "yarn build --",
+    "build-release": "yarn build -- --release"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "cargo-cp-artifact": "^0.1"
+  }
+}
