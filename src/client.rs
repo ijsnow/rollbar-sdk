@@ -1,10 +1,43 @@
-use ::{async_trait::async_trait, std::fmt::Debug};
+use reqwest::Client as HttpClient;
 
-use crate::types::Item;
+use crate::{types::Item, Config};
 
-pub type ClientError = Box<dyn std::error::Error>;
+#[derive(Clone, Debug)]
+pub struct Client {
+    config: Config,
+    client: HttpClient,
+}
 
-#[async_trait]
-pub trait Client: Debug + Send + Sync {
-    async fn send(&self, item: Item) -> Result<(), ClientError>;
+impl Client {
+    pub fn new(config: Config) -> Self {
+        Self {
+            config,
+            client: HttpClient::new(),
+        }
+    }
+
+    pub fn send_item(&self, item: Item) {
+        let this = self.clone();
+
+        let future = async move {
+            if let Err(_err) = this.send(item).await {
+                // silently ignore to be forgiving
+            }
+        };
+
+        #[cfg(target_arch = "wasm32")]
+        wasm_bindgen_futures::spawn_local(future);
+    }
+
+    async fn send(&self, item: Item) -> Result<(), Box<dyn std::error::Error>> {
+        // TODO: handle api errors (retry, etc)
+        self.client
+            .post(self.config.endpoint())
+            .header("X-Rollbar-Access-Token", self.config.access_token())
+            .json(&item)
+            .send()
+            .await?;
+
+        Ok(())
+    }
 }

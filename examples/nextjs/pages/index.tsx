@@ -6,6 +6,8 @@ import styles from '../styles/Home.module.css'
 
 import { Instance } from 'rollbar-sdk'
 
+type LogLevel = 'debug' | 'warning' | 'info' | 'error' | 'critical';
+
 const generateId = (() => {
   let counter = 0;
   return () => counter++;
@@ -16,7 +18,7 @@ const defaultExtra = [
 ];
 
 const Home: NextPage = () => {
-  const [rollbar, setRollbar] = useState();
+  const [rollbar, setRollbar] = useState<Instance>();
 
   useEffect(() => {
     const instance = Instance.fromConfig({
@@ -26,7 +28,7 @@ const Home: NextPage = () => {
     setRollbar(instance);
   }, []);
 
-  const [level, setLevel] = useState('debug');
+  const [level, setLevel] = useState<LogLevel>('debug');
 
   const [message, setMessage] = useState('Rust is cool.');
 
@@ -53,7 +55,7 @@ const Home: NextPage = () => {
       .reduce((extra, { key, value }) => ({ ...extra, [key]: value }), {});
 
     rollbar[level](message, extra);
-    // This also works:
+    // This is also available:
     // rollbar.log(level, message, extraFields);
   }, [rollbar, level, message, extraFields]);
 
@@ -72,7 +74,7 @@ const Home: NextPage = () => {
       <h1>Rollbar SDK... from Rust 🦀!</h1>
 
       <label>Level:{' '}</label>
-      <select name="level" id="level" onChange={event => setLevel(event.target.value)} value={level}>
+      <select name="level" id="level" onChange={event => setLevel(event.target.value as LogLevel)} value={level}>
         {['debug', 'info', 'warning', 'error', 'critical']
           .map(value => <option key={value} value={value}>{value}</option>)}
       </select>

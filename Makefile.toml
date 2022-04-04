@@ -1,0 +1,53 @@
+[tasks.build-wasm]
+command = "wasm-pack"
+args = ["build", "--out-dir", "build/wasm"]
+
+[tasks.link-wasm]
+command = "yarn"
+args = ["--cwd", "./build/wasm", "link"]
+
+[tasks.build-node]
+command = "wasm-pack"
+args = ["build", "--target", "nodejs", "--out-dir", "build/node"]
+
+[tasks.link-node]
+command = "yarn"
+args = ["--cwd", "./build/wasm", "link"]
+
+#[tasks.prepare-node]
+#command = "yarn"
+#args = ["--cwd", "node", "install"]
+
+#[tasks.build-node]
+#command = "yarn"
+#args = ["--cwd", "node", "build"]
+
+#[tasks.link-node]
+#command = "yarn"
+#args = ["--cwd", "node", "link"]
+
+[tasks.build]
+dependencies = ["build-node", "build-wasm"]
+
+[tasks.link-nextjs-example]
+command = "yarn"
+args = ["--cwd", "./examples/nextjs", "link", "rollbar-sdk"]
+
+[tasks.prep-nextjs-example]
+command = "yarn"
+args = ["--cwd", "./examples/nextjs"]
+dependencies = ["link-nextjs-example"]
+
+[tasks.prep-web-dev]
+dependencies = [
+  "build-wasm",
+  "link-wasm",
+  # "build-node",
+  # "link-node",
+  "prep-nextjs-example"
+]
+
+[tasks.dev-web]
+command = "yarn"
+args = ["--cwd", "./examples/nextjs", "dev"]
+dependencies = ["prep-web-dev"]
