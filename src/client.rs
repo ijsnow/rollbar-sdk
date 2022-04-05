@@ -27,6 +27,9 @@ impl Client {
 
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(future);
+
+        #[cfg(feature = "nodejs")]
+        tokio::runtime::Runtime::new().unwrap().block_on(future);
     }
 
     async fn send(&self, item: Item) -> Result<(), Box<dyn std::error::Error>> {

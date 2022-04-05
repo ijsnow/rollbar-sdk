@@ -1,18 +1,11 @@
+# Build artifacts
+
+sdk/wasm
+sdk/node/index.node
+sdk/node/index.js
+sdk/node/index.d.ts
+
+# Added by cargo
+
 /target
 Cargo.lock
-lib/index.node
-
-# Added by cargo
-#
-# already existing elements were commented out
-
-#/target
-#Cargo.lock
-
-
-# Added by cargo
-#
-# already existing elements were commented out
-
-#/target
-#Cargo.lock

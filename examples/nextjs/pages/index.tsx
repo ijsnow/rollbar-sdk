@@ -1,6 +1,4 @@
 import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
 import { useEffect, useState, useCallback } from 'react'
 import styles from '../styles/Home.module.css'
 
@@ -22,7 +20,7 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     const instance = Instance.fromConfig({
-        accessToken: 'b5938ecbdb984aa091234644b0686c3d'
+      accessToken: process.env.POST_TOKEN
     });
 
     setRollbar(instance);
@@ -46,7 +44,7 @@ const Home: NextPage = () => {
     }));
   }, [extraFields, setExtraFields]);
 
-  const handleSendMessage = useCallback((id, next) => {
+  const handleSendMessage = useCallback(() => {
     if (!rollbar) {
         return;
     }
@@ -58,16 +56,6 @@ const Home: NextPage = () => {
     // This is also available:
     // rollbar.log(level, message, extraFields);
   }, [rollbar, level, message, extraFields]);
-
-  const [randomWord, setRandomWord] = useState();
-
-  useEffect(() => {
-    fetch('/api/random')
-      .then(res => res.json())
-      .then(({ word }) => {
-        setRandomWord(word);
-      });
-  }, []);
 
   return (
     <div className={styles.container}>
@@ -120,9 +108,6 @@ const Home: NextPage = () => {
       <button onClick={handleAddExtraField}>Add extra field</button>
       <br />
       <button onClick={handleSendMessage}>Send it 🏂!</button>
-      <h2>Now for node...</h2>
-      <button>Fetch data from endpoint</button>
-      <p>Random word from api endpoint: {}</p>
     </div>
   )
 }

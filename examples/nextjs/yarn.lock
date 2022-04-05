@@ -1450,7 +1450,10 @@ rimraf@^3.0.2:
   dependencies:
     glob "^7.1.3"
 
-"rollbar-sdk@file:../../build/wasm":
+"rollbar-node@file:../../sdk/node":
+  version "0.1.0"
+
+"rollbar-sdk@file:../../sdk/wasm":
   version "0.1.0"
 
 run-parallel@^1.1.9:

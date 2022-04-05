@@ -1,53 +1,66 @@
 [tasks.build-wasm]
 command = "wasm-pack"
-args = ["build", "--out-dir", "build/wasm"]
+args = ["build", "--out-dir", "sdk/wasm"]
+
+[tasks.create-wasm-link]
+command = "yarn"
+args = ["--cwd", "./sdk/wasm", "link"]
 
 [tasks.link-wasm]
 command = "yarn"
-args = ["--cwd", "./build/wasm", "link"]
+args = ["--cwd", "./examples/nextjs", "link", "rollbar-sdk"]
+
+[tasks.before-build-node]
+command = "yarn"
+args = ["--cwd", "./sdk/node", "install"]
 
 [tasks.build-node]
-command = "wasm-pack"
-args = ["build", "--target", "nodejs", "--out-dir", "build/node"]
+command = "yarn"
+args = ["--cwd", "./sdk/node", "build"]
+dependencies = ["before-build-node"]
+
+[tasks.create-node-link]
+command = "yarn"
+args = ["--cwd", "./sdk/node", "link"]
 
 [tasks.link-node]
 command = "yarn"
-args = ["--cwd", "./build/wasm", "link"]
-
-#[tasks.prepare-node]
-#command = "yarn"
-#args = ["--cwd", "node", "install"]
-
-#[tasks.build-node]
-#command = "yarn"
-#args = ["--cwd", "node", "build"]
-
-#[tasks.link-node]
-#command = "yarn"
-#args = ["--cwd", "node", "link"]
+args = ["--cwd", "./examples/nodejs", "link", "rollbar-node"]
 
 [tasks.build]
 dependencies = ["build-node", "build-wasm"]
 
-[tasks.link-nextjs-example]
-command = "yarn"
-args = ["--cwd", "./examples/nextjs", "link", "rollbar-sdk"]
-
-[tasks.prep-nextjs-example]
-command = "yarn"
-args = ["--cwd", "./examples/nextjs"]
-dependencies = ["link-nextjs-example"]
-
-[tasks.prep-web-dev]
+[tasks.link]
 dependencies = [
-  "build-wasm",
+  "create-wasm-link",
   "link-wasm",
-  # "build-node",
-  # "link-node",
-  "prep-nextjs-example"
+  "create-node-link",
+  "link-node",
 ]
 
-[tasks.dev-web]
+[tasks.before-nextjs-example]
+command = "yarn"
+args = ["--cwd", "./examples/nextjs", "install"]
+
+[tasks.run-nextjs-example]
 command = "yarn"
 args = ["--cwd", "./examples/nextjs", "dev"]
-dependencies = ["prep-web-dev"]
+dependencies = [
+  "build",
+  "link",
+  "before-nextjs-example",
+]
+
+[tasks.before-nodejs-example]
+command = "yarn"
+args = ["--cwd", "./examples/nodejs", "install"]
+
+[tasks.run-nodejs-example]
+command = "node"
+args = ["./examples/nodejs/index.js"]
+dependencies = [
+  "before-nodejs-example",
+  "build-node",
+  "create-node-link",
+  "link-node",
+]

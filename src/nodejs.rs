@@ -10,58 +10,106 @@ pub struct Instance {
     client: Client,
 }
 
+impl Finalize for Instance {}
+
 impl Instance {
     pub fn from_config(mut cx: FunctionContext) -> JsResult<JsBox<Instance>> {
         let input: Handle<JsObject> = cx.argument(0)?;
 
-        let access_token: JsValue<JsString> = input.get(&mut cx, "accessToken")?;
-        let endpoint: Option<JsValue<JsString>> = input.get_opt(&mut cx, "endpoint")?;
+        let access_token: Handle<JsString> = input
+            .get(&mut cx, "accessToken")?
+            .downcast_or_throw(&mut cx)?;
 
-        let config = Config {
-            access_token: access_token.value(),
-            endpoint: endpoint
-                .map(JsString::value)
-                .unwrap_or_else(Config::default_endpoint),
+        let endpoint: Handle<JsValue> = input.get(&mut cx, "endpoint")?;
+
+        let endpoint: String = if endpoint.is_a::<JsUndefined, FunctionContext>(&mut cx) {
+            Config::default_endpoint()
+        } else {
+            let s: Handle<JsString> = endpoint.downcast_or_throw(&mut cx)?;
+            s.value(&mut cx)
         };
+
+        let config = Config::new()
+            .with_access_token(access_token.value(&mut cx))
+            .with_endpoint(endpoint);
 
         Ok(cx.boxed(Instance {
             client: Client::new(config),
         }))
     }
 
-    /*
-    pub fn log(&self, level: Level, message: &str, extra: JsValue) {
-        let extra: Option<HashMap<String, Value>> = extra.into_serde().expect("to work");
+    pub fn log_with<'a>(
+        instance: Handle<JsBox<Self>>,
+        level: Level,
+        start_arg_idx: i32,
+        mut cx: FunctionContext<'a>,
+    ) -> JsResult<'a, JsUndefined> {
+        let message: Handle<JsString> = cx.argument(start_arg_idx)?;
 
-        let item = Item::from((level, message, extra.unwrap_or_else(|| HashMap::new())));
+        let extra: Option<Handle<JsValue>> = cx.argument_opt(start_arg_idx + 1);
 
-        self.send_item(item);
+        let extra: HashMap<String, Value> = if let Some(extra) = extra {
+            neon_serde2::from_value(&mut cx, extra).or_else(|e| cx.throw_error(e.to_string()))?
+        } else {
+            HashMap::new()
+        };
+
+        let item = Item::from((level, message.value(&mut cx), extra));
+
+        instance.client.send_item(item);
+
+        Ok(cx.undefined())
     }
 
-    pub fn debug(&self, message: &str, extra: JsValue) {
-        self.log(Level::Debug, message, extra)
+    pub fn log(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
+
+        let level: Handle<JsString> = cx.argument(0)?;
+        let level = Level::from(level.value(&mut cx));
+
+        Self::log_with(instance, level, 1, cx)
     }
 
-    pub fn info(&self, message: &str, extra: JsValue) {
-        self.log(Level::Info, message, extra)
+    pub fn debug(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
+
+        Self::log_with(instance, Level::Debug, 0, cx)
     }
 
-    pub fn warning(&self, message: &str, extra: JsValue) {
-        self.log(Level::Warning, message, extra)
+    pub fn info(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
+
+        Self::log_with(instance, Level::Info, 0, cx)
     }
 
-    pub fn error(&self, message: &str, extra: JsValue) {
-        self.log(Level::Error, message, extra)
+    pub fn warning(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
+
+        Self::log_with(instance, Level::Warning, 0, cx)
     }
 
-    pub fn critical(&self, message: &str, extra: JsValue) {
-        self.log(Level::Critical, message, extra)
+    pub fn error(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
+
+        Self::log_with(instance, Level::Error, 0, cx)
     }
-    */
+
+    pub fn critical(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
+
+        Self::log_with(instance, Level::Critical, 0, cx)
+    }
 }
 
-#[neon::main]
-fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    cx.export_function("fromConfig", Instance::from_config)?;
-    Ok(())
-}
+//#[neon::main]
+//pub fn main(mut cx: ModuleContext) -> NeonResult<()> {
+//cx.export_function("fromConfig", Instance::from_config)?;
+//cx.export_function("log", Instance::log)?;
+//cx.export_function("debug", Instance::debug)?;
+//cx.export_function("info", Instance::info)?;
+//cx.export_function("warning", Instance::warning)?;
+//cx.export_function("error", Instance::error)?;
+//cx.export_function("critical", Instance::critical)?;
+
+//Ok(())
+//}

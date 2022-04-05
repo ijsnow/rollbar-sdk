@@ -29,6 +29,20 @@ pub enum Level {
     Critical,
 }
 
+impl<Str: AsRef<str>> From<Str> for Level {
+    fn from(s: Str) -> Self {
+        use Level::*;
+
+        match s.as_ref() {
+            "debug" => Debug,
+            "info" => Info,
+            "warning" => Warning,
+            "critical" => Critical,
+            _ => Error,
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Body {
@@ -59,6 +73,24 @@ pub struct Frame {
 #[derive(Debug, Serialize)]
 pub struct Exception {
     class: String,
+}
+
+impl<AsStr: Into<String>> From<(Level, AsStr, HashMap<String, Value>)> for Item {
+    fn from((level, message, extra): (Level, AsStr, HashMap<String, Value>)) -> Self {
+        let message = Message {
+            body: message.into(),
+            extra,
+        };
+
+        Self {
+            data: Data {
+                body: Body::Message(message),
+                level,
+                context: None,
+                language: None,
+            },
+        }
+    }
 }
 
 #[cfg(test)]

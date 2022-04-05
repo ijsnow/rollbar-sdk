@@ -1,9 +1,8 @@
-use ::{std::collections::HashMap, serde_json::Value, wasm_bindgen::prelude::*};
+use ::{serde_json::Value, std::collections::HashMap, wasm_bindgen::prelude::*};
 
 use crate::{
     types::{Item, Level},
-    Config,
-    Client,
+    Client, Config,
 };
 
 #[derive(Debug, Clone)]
@@ -30,7 +29,7 @@ impl Instance {
 
         let item = Item::from((level, message, extra.unwrap_or_else(|| HashMap::new())));
 
-        self.send_item(item);
+        self.client.send_item(item);
     }
 
     pub fn debug(&self, message: &str, extra: JsValue) {
