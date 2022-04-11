@@ -8,6 +8,7 @@ const {
     warning,
     error,
     critical,
+    shutdown,
 } = require("./index.node")
 
 const logAsync = promisify(log)
@@ -57,6 +58,10 @@ class Rollbar {
 
     critical(message: string, extra: ExtraData) {
         return criticalAsync.call(this.instance, 'critical', message, extra)
+    }
+
+    shutdown() {
+        return shutdown.call(this.instance)
     }
 }
 

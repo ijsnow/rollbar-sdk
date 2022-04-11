@@ -40,7 +40,7 @@ POST_TOKEN=<your project's post_client_item here>
 [`./examples/nextjs`](./examples/nextjs) contains a nextjs application where this library is consumed as a web assembly module. To see it in action run the following from the `rollbar-sdk` directory: 
 
 ```shell
-cargo make --env-file=.env run-nextjs-example
+cargo make run-nextjs-example
 ```
 
 Next, open [http://localhost:3000](http://localhost:3000), fiddle with the form fields, and send it 🏂! Once you submit the form, check out the item in the rollbar application.
@@ -50,7 +50,7 @@ Next, open [http://localhost:3000](http://localhost:3000), fiddle with the form 
 [`./examples/nodejs`](./examples/nextjs) contains a simple node program where this library is consumed as a native module. Feel free to fiddle with the program at [`./examples/nodejs/index.js`.](./examples/nodejs/index.js) To see it in action, run the following:
 
 ```shell
-cargo make --env-file=.env run-nextjs-example
+cargo make run-nodejs-example
 ```
 
 ## Caveats

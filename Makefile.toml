@@ -1,3 +1,5 @@
+env_files = [".env"]
+
 [tasks.build-wasm]
 command = "wasm-pack"
 args = ["build", "--out-dir", "sdk/wasm"]
@@ -27,17 +29,6 @@ args = ["--cwd", "./sdk/node", "link"]
 command = "yarn"
 args = ["--cwd", "./examples/nodejs", "link", "rollbar-node"]
 
-[tasks.build]
-dependencies = ["build-node", "build-wasm"]
-
-[tasks.link]
-dependencies = [
-  "create-wasm-link",
-  "link-wasm",
-  "create-node-link",
-  "link-node",
-]
-
 [tasks.before-nextjs-example]
 command = "yarn"
 args = ["--cwd", "./examples/nextjs", "install"]
@@ -46,8 +37,9 @@ args = ["--cwd", "./examples/nextjs", "install"]
 command = "yarn"
 args = ["--cwd", "./examples/nextjs", "dev"]
 dependencies = [
-  "build",
-  "link",
+  "build-wasm",
+  "create-wasm-link",
+  "link-wasm",
   "before-nextjs-example",
 ]
 

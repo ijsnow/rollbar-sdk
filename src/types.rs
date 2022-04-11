@@ -3,12 +3,12 @@ use ::{serde::Serialize, serde_json::Value, std::collections::HashMap};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Item {
     data: Data,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Data {
     body: Body,
     level: Level,
@@ -18,7 +18,7 @@ pub struct Data {
     context: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "lowercase")]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub enum Level {
@@ -43,34 +43,34 @@ impl<Str: AsRef<str>> From<Str> for Level {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Body {
     Message(Message),
     Trace(Trace),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Message {
     body: String,
     #[serde(flatten)]
     extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Trace {
     frames: Vec<Frame>,
     exception: Exception,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Frame {
     filename: String,
     lineno: Option<u32>,
     colno: Option<u32>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Exception {
     class: String,
 }

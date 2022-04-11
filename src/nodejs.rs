@@ -14,28 +14,20 @@ impl Finalize for Instance {}
 
 impl Instance {
     pub fn from_config(mut cx: FunctionContext) -> JsResult<JsBox<Instance>> {
-        let input: Handle<JsObject> = cx.argument(0)?;
+        let input: Handle<JsValue> = cx.argument(0)?;
 
-        let access_token: Handle<JsString> = input
-            .get(&mut cx, "accessToken")?
-            .downcast_or_throw(&mut cx)?;
+        let config: Config =
+            neon_serde2::from_value(&mut cx, input).or_else(|e| cx.throw_error(e.to_string()))?;
 
-        let endpoint: Handle<JsValue> = input.get(&mut cx, "endpoint")?;
+        let client = Client::new(config).or_else(|e| cx.throw_error(e.to_string()))?;
 
-        let endpoint: String = if endpoint.is_a::<JsUndefined, FunctionContext>(&mut cx) {
-            Config::default_endpoint()
-        } else {
-            let s: Handle<JsString> = endpoint.downcast_or_throw(&mut cx)?;
-            s.value(&mut cx)
-        };
+        Ok(cx.boxed(Instance { client }))
+    }
 
-        let config = Config::new()
-            .with_access_token(access_token.value(&mut cx))
-            .with_endpoint(endpoint);
-
-        Ok(cx.boxed(Instance {
-            client: Client::new(config),
-        }))
+    pub fn shutdown(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
+        instance.client.shutdown();
+        Ok(cx.undefined())
     }
 
     pub fn log_with<'a>(
@@ -101,15 +93,16 @@ impl Instance {
     }
 }
 
-//#[neon::main]
-//pub fn main(mut cx: ModuleContext) -> NeonResult<()> {
-//cx.export_function("fromConfig", Instance::from_config)?;
-//cx.export_function("log", Instance::log)?;
-//cx.export_function("debug", Instance::debug)?;
-//cx.export_function("info", Instance::info)?;
-//cx.export_function("warning", Instance::warning)?;
-//cx.export_function("error", Instance::error)?;
-//cx.export_function("critical", Instance::critical)?;
+#[neon::main]
+pub fn main(mut cx: ModuleContext) -> NeonResult<()> {
+    cx.export_function("fromConfig", Instance::from_config)?;
+    cx.export_function("log", Instance::log)?;
+    cx.export_function("debug", Instance::debug)?;
+    cx.export_function("info", Instance::info)?;
+    cx.export_function("warning", Instance::warning)?;
+    cx.export_function("error", Instance::error)?;
+    cx.export_function("critical", Instance::critical)?;
+    cx.export_function("shutdown", Instance::shutdown)?;
 
-//Ok(())
-//}
+    Ok(())
+}

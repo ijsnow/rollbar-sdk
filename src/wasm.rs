@@ -17,11 +17,12 @@ impl Instance {
     pub fn from_config(input: JsValue) -> Result<Instance, JsValue> {
         let config: Config = input
             .into_serde()
-            .map_err(|_| JsValue::from("invalid config object"))?;
+            .map_err(|error| JsValue::from(format!("invalid config object: {}", error)))?;
 
-        Ok(Instance {
-            client: Client::new(config),
-        })
+        let client = Client::new(config)
+            .map_err(|error| JsValue::from(format!("unable to create client: {}", error)))?;
+
+        Ok(Instance { client })
     }
 
     pub fn log(&self, level: Level, message: &str, extra: JsValue) {

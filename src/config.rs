@@ -10,11 +10,17 @@ pub struct Config {
     access_token: String,
     #[serde(default = "Config::default_endpoint")]
     endpoint: String,
+    #[serde(default = "Config::default_shutdown_timeout")]
+    shutdown_timeout: u64,
 }
 
 impl Config {
     pub fn default_endpoint() -> String {
         "https://api.rollbar.com/api/1/item".into()
+    }
+
+    pub fn default_shutdown_timeout() -> u64 {
+        100
     }
 }
 
@@ -24,7 +30,8 @@ impl Config {
     pub fn new() -> Self {
         Self {
             access_token: String::new(),
-            endpoint: "https:://api.rollbar.com/api/1/item".into(),
+            endpoint: Config::default_endpoint(),
+            shutdown_timeout: Config::default_shutdown_timeout(),
         }
     }
 
@@ -39,6 +46,12 @@ impl Config {
         self.endpoint = endpoint;
         self
     }
+
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = withShutdownTimeout))]
+    pub fn with_shutdown_timeout(mut self, shutdown_timeout: u64) -> Self {
+        self.shutdown_timeout = shutdown_timeout;
+        self
+    }
 }
 
 impl Config {
@@ -48,5 +61,9 @@ impl Config {
 
     pub fn endpoint(&self) -> &str {
         &self.endpoint
+    }
+
+    pub fn shutdown_timeout(&self) -> u64 {
+        self.shutdown_timeout
     }
 }
