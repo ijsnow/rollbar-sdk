@@ -18,7 +18,14 @@ use ::{
 };
 
 #[cfg(not(target_arch = "wasm32"))]
-use ::std::time::Duration;
+use ::{once_cell::sync::OnceCell, std::time::Duration, tokio::runtime::Runtime};
+
+#[cfg(not(target_arch = "wasm32"))]
+fn get_runtime() -> Result<&'static Runtime, Error> {
+    static RUNTIME: OnceCell<Runtime> = OnceCell::new();
+
+    RUNTIME.get_or_try_init(|| Runtime::new())
+}
 
 use crate::{types::Item, Config};
 
@@ -62,24 +69,18 @@ impl Client {
                 let client = this.client.clone();
                 let config = this.config.clone();
 
-                let inner_future = async { send_item(client, config, item).await };
-
-                #[cfg(target_arch = "wasm32")]
-                wasm_bindgen_futures::spawn_local(future);
-
-                #[cfg(not(target_arch = "wasm32"))]
-                inner_runtime.spawn(inner_future);
+                this.send(item).await;
             }
-
-            #[cfg(not(target_arch = "wasm32"))]
-            inner_runtime.shutdown_timeout(Duration::from_millis(this.config.shutdown_timeout()));
         };
 
         #[cfg(target_arch = "wasm32")]
         wasm_bindgen_futures::spawn_local(future);
 
         #[cfg(not(target_arch = "wasm32"))]
-        outer_runtime.spawn(future);
+        {
+            let runtime = get_runtime()?;
+            runtime.spawn(future);
+        }
 
         Ok(())
     }
