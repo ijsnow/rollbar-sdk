@@ -12,20 +12,16 @@ pub enum Error {
 }
 
 use ::{
-    futures::{channel::mpsc, StreamExt},
+    futures::{
+        channel::{mpsc, oneshot},
+        StreamExt,
+    },
     reqwest::Client as HttpClient,
-    std::sync::{Arc, Mutex},
+    std::sync::{Arc, Condvar, Mutex},
 };
 
 #[cfg(not(target_arch = "wasm32"))]
-use ::{once_cell::sync::OnceCell, std::time::Duration, tokio::runtime::Runtime};
-
-#[cfg(not(target_arch = "wasm32"))]
-fn get_runtime() -> Result<&'static Runtime, Error> {
-    static RUNTIME: OnceCell<Runtime> = OnceCell::new();
-
-    RUNTIME.get_or_try_init(|| Runtime::new())
-}
+use ::{std::time::Duration, tokio::runtime::Runtime};
 
 use crate::{types::Item, Config};
 
@@ -36,15 +32,21 @@ pub struct Client {
     config: Config,
     client: HttpClient,
     item_sender: Arc<Mutex<mpsc::Sender<Item>>>,
+    in_flight_count: Arc<Mutex<u32>>,
+    shutdown_signal: Arc<Condvar>,
 }
 
 impl Client {
     pub fn new(config: Config) -> Result<Self, Error> {
         let (item_sender, items) = mpsc::channel(QUEUE_DEPTH);
+        let shutdown_signal = Condvar::new();
+        let in_flight_count = 0;
 
         let this = Self {
             config,
             item_sender: Arc::new(Mutex::new(item_sender)),
+            in_flight_count: Arc::new(Mutex::new(in_flight_count)),
+            shutdown_signal: Arc::new(shutdown_signal),
             client: HttpClient::new(),
         };
 
@@ -66,9 +68,6 @@ impl Client {
 
         let future = async move {
             while let Some(item) = items.next().await {
-                let client = this.client.clone();
-                let config = this.config.clone();
-
                 this.send(item).await;
             }
         };
@@ -78,8 +77,15 @@ impl Client {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let runtime = get_runtime()?;
+            let runtime = Runtime::new().map_err(Error::RuntimeCreation)?;
+
             runtime.spawn(future);
+
+            std::thread::spawn(move || {
+                let guard = self.queue_depth.lock().unwrap();
+
+                runtime.shutdown_timeout(Duration::from_millis(100));
+            });
         }
 
         Ok(())
@@ -94,9 +100,9 @@ impl Client {
     }
 
     pub fn shutdown(self) -> Result<(), Error> {
-        let mut sender = self.item_sender.lock().map_err(|_| Error::SenderLock)?;
+        let mut sender = self.shutdown_sender.lock().map_err(|_| Error::SenderLock)?;
 
-        sender.close_channel();
+        sender.send(());
 
         Ok(())
     }
