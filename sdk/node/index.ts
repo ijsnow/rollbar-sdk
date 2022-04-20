@@ -36,28 +36,32 @@ class Rollbar {
         this.instance = fromConfig(config)
     }
 
-    log(level: Level, message: string, extra: ExtraData) {
-        return logAsync.call(this.instance, level, message, extra)
+    log(level: Level, message: string, extra?: ExtraData) {
+        const t = t => {
+            console.log(t);
+            return t
+        };
+        return logAsync.apply(this.instance, t([level, message, extra].filter(v => !!v)))
     }
 
-    debug(message: string, extra: ExtraData) {
-        return debugAsync.call(this.instance, 'debug', message, extra)
+    debug(message: string, extra?: ExtraData) {
+        return debugAsync.apply(this.instance, ['debug', message, extra])
     }
 
-    info(message: string, extra: ExtraData) {
-        return infoAsync.call(this.instance, 'info', message, extra)
+    info(message: string, extra?: ExtraData) {
+        return infoAsync.apply(this.instance, ['info', message, extra])
     }
 
-    warning(message: string, extra: ExtraData) {
-        return warningAsync.call(this.instance, 'warning', message, extra)
+    warning(message: string, extra?: ExtraData) {
+        return warningAsync.apply(this.instance, ['warning', message, extra])
     }
 
-    error(message: string, extra: ExtraData) {
-        return errorAsync.call(this.instance, 'error', message, extra)
+    error(message: string, extra?: ExtraData) {
+        return errorAsync.apply(this.instance, ['error', message, extra])
     }
 
-    critical(message: string, extra: ExtraData) {
-        return criticalAsync.call(this.instance, 'critical', message, extra)
+    critical(message: string, extra?: ExtraData) {
+        return criticalAsync.apply(this.instance, ['critical', message, extra])
     }
 
     shutdown() {

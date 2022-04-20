@@ -17,7 +17,7 @@ use ::{
         StreamExt,
     },
     reqwest::Client as HttpClient,
-    std::sync::{Arc, Condvar, Mutex},
+    std::sync::{Arc, Mutex},
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -32,21 +32,15 @@ pub struct Client {
     config: Config,
     client: HttpClient,
     item_sender: Arc<Mutex<mpsc::Sender<Item>>>,
-    in_flight_count: Arc<Mutex<u32>>,
-    shutdown_signal: Arc<Condvar>,
 }
 
 impl Client {
     pub fn new(config: Config) -> Result<Self, Error> {
         let (item_sender, items) = mpsc::channel(QUEUE_DEPTH);
-        let shutdown_signal = Condvar::new();
-        let in_flight_count = 0;
 
         let this = Self {
             config,
             item_sender: Arc::new(Mutex::new(item_sender)),
-            in_flight_count: Arc::new(Mutex::new(in_flight_count)),
-            shutdown_signal: Arc::new(shutdown_signal),
             client: HttpClient::new(),
         };
 
@@ -66,10 +60,26 @@ impl Client {
     fn run(&self, mut items: mpsc::Receiver<Item>) -> Result<(), Error> {
         let this = self.clone();
 
+        let (shutdown_signal, shutdown) = oneshot::channel();
+
+        let inner_runtime = Runtime::new().map_err(Error::RuntimeCreation)?;
+
         let future = async move {
             while let Some(item) = items.next().await {
-                this.send(item).await;
+                let inner_this = this.clone();
+
+                let inner_future = async move {
+                    inner_this.send(item).await;
+                };
+
+                #[cfg(target_arch = "wasm32")]
+                wasm_bindgen_futures::spawn_local(inner_future);
+
+                #[cfg(not(target_arch = "wasm32"))]
+                inner_runtime.spawn(inner_future);
             }
+
+            let _ = shutdown_signal.send(());
         };
 
         #[cfg(target_arch = "wasm32")]
@@ -82,7 +92,9 @@ impl Client {
             runtime.spawn(future);
 
             std::thread::spawn(move || {
-                let guard = self.queue_depth.lock().unwrap();
+                runtime.block_on(async {
+                    let _ = shutdown.await;
+                });
 
                 runtime.shutdown_timeout(Duration::from_millis(100));
             });
@@ -94,15 +106,15 @@ impl Client {
     pub fn send_item(&self, item: Item) -> Result<(), Error> {
         let mut sender = self.item_sender.lock().map_err(|_| Error::SenderLock)?;
 
-        sender.try_send(item)?;
+        let _ = sender.try_send(item);
 
         Ok(())
     }
 
-    pub fn shutdown(self) -> Result<(), Error> {
-        let mut sender = self.shutdown_sender.lock().map_err(|_| Error::SenderLock)?;
+    pub fn shutdown(&self) -> Result<(), Error> {
+        let mut sender = self.item_sender.lock().map_err(|_| Error::SenderLock)?;
 
-        sender.send(());
+        sender.close_channel();
 
         Ok(())
     }
@@ -118,17 +130,5 @@ impl Client {
         {
             // TODO: handle api errors (retry, etc)
         }
-    }
-}
-
-async fn send_item(client: HttpClient, config: Config, item: Item) {
-    if let Err(_error) = client
-        .post(config.endpoint())
-        .header("X-Rollbar-Access-Token", config.access_token())
-        .json(&item)
-        .send()
-        .await
-    {
-        // TODO: handle api errors (retry, etc)
     }
 }

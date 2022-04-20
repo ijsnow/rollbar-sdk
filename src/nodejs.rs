@@ -41,6 +41,7 @@ impl Instance {
         let extra: Option<Handle<JsValue>> = cx.argument_opt(start_arg_idx + 1);
 
         let extra: HashMap<String, Value> = if let Some(extra) = extra {
+            println!("nooooooooo");
             neon_serde2::from_value(&mut cx, extra).or_else(|e| cx.throw_error(e.to_string()))?
         } else {
             HashMap::new()
