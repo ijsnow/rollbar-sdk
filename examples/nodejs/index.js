@@ -4,7 +4,7 @@ const rollbar = new Rollbar({
   accessToken: process.env.POST_TOKEN,
 });
 
-rollbar.log('warning', 'oopsie', {
+rollbar.log('info', 'yeehaw', {
   some: 'stuff'
 });
 

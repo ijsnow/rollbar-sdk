@@ -37,11 +37,7 @@ class Rollbar {
     }
 
     log(level: Level, message: string, extra?: ExtraData) {
-        const t = t => {
-            console.log(t);
-            return t
-        };
-        return logAsync.apply(this.instance, t([level, message, extra].filter(v => !!v)))
+        return logAsync.apply(this.instance, [level, message, extra].filter(v => !!v))
     }
 
     debug(message: string, extra?: ExtraData) {

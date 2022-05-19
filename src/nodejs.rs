@@ -2,12 +2,12 @@ use ::{neon::prelude::*, serde_json::Value, std::collections::HashMap};
 
 use crate::{
     types::{Item, Level},
-    Client, Config,
+    Config, Transport,
 };
 
 #[derive(Debug, Clone)]
 pub struct Instance {
-    client: Client,
+    transport: Transport,
 }
 
 impl Finalize for Instance {}
@@ -19,14 +19,16 @@ impl Instance {
         let config: Config =
             neon_serde2::from_value(&mut cx, input).or_else(|e| cx.throw_error(e.to_string()))?;
 
-        let client = Client::new(config).or_else(|e| cx.throw_error(e.to_string()))?;
+        let transport = Transport::new(config).or_else(|e| cx.throw_error(e.to_string()))?;
 
-        Ok(cx.boxed(Instance { client }))
+        Ok(cx.boxed(Instance { transport }))
     }
 
     pub fn shutdown(mut cx: FunctionContext) -> JsResult<JsUndefined> {
         let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
-        instance.client.shutdown();
+
+        instance.transport.shutdown();
+
         Ok(cx.undefined())
     }
 
@@ -41,7 +43,6 @@ impl Instance {
         let extra: Option<Handle<JsValue>> = cx.argument_opt(start_arg_idx + 1);
 
         let extra: HashMap<String, Value> = if let Some(extra) = extra {
-            println!("nooooooooo");
             neon_serde2::from_value(&mut cx, extra).or_else(|e| cx.throw_error(e.to_string()))?
         } else {
             HashMap::new()
@@ -49,7 +50,7 @@ impl Instance {
 
         let item = Item::from((level, message.value(&mut cx), extra));
 
-        instance.client.send_item(item);
+        instance.transport.send(item);
 
         Ok(cx.undefined())
     }

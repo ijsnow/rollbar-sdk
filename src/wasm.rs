@@ -2,13 +2,13 @@ use ::{serde_json::Value, std::collections::HashMap, wasm_bindgen::prelude::*};
 
 use crate::{
     types::{Item, Level},
-    Client, Config,
+    Config, Transport,
 };
 
 #[derive(Debug, Clone)]
 #[wasm_bindgen]
 pub struct Instance {
-    client: Client,
+    transport: Transport,
 }
 
 #[wasm_bindgen]
@@ -19,37 +19,41 @@ impl Instance {
             .into_serde()
             .map_err(|error| JsValue::from(format!("invalid config object: {}", error)))?;
 
-        let client = Client::new(config)
-            .map_err(|error| JsValue::from(format!("unable to create client: {}", error)))?;
+        let transport = Transport::new(config)
+            .map_err(|error| JsValue::from(format!("unable to create transport: {}", error)))?;
 
-        Ok(Instance { client })
+        Ok(Instance { transport })
     }
 
-    pub fn log(&self, level: Level, message: &str, extra: JsValue) {
-        let extra: Option<HashMap<String, Value>> = extra.into_serde().expect("to work");
+    pub fn log(&self, level: Level, message: &str, extra: JsValue) -> Result<(), JsValue> {
+        let extra: Option<HashMap<String, Value>> = extra
+            .into_serde()
+            .map_err(|error| JsValue::from(format!("{}", error)))?;
 
         let item = Item::from((level, message, extra.unwrap_or_else(|| HashMap::new())));
 
-        self.client.send_item(item);
+        self.transport.send(item);
+
+        Ok(())
     }
 
-    pub fn debug(&self, message: &str, extra: JsValue) {
+    pub fn debug(&self, message: &str, extra: JsValue) -> Result<(), JsValue> {
         self.log(Level::Debug, message, extra)
     }
 
-    pub fn info(&self, message: &str, extra: JsValue) {
+    pub fn info(&self, message: &str, extra: JsValue) -> Result<(), JsValue> {
         self.log(Level::Info, message, extra)
     }
 
-    pub fn warning(&self, message: &str, extra: JsValue) {
+    pub fn warning(&self, message: &str, extra: JsValue) -> Result<(), JsValue> {
         self.log(Level::Warning, message, extra)
     }
 
-    pub fn error(&self, message: &str, extra: JsValue) {
+    pub fn error(&self, message: &str, extra: JsValue) -> Result<(), JsValue> {
         self.log(Level::Error, message, extra)
     }
 
-    pub fn critical(&self, message: &str, extra: JsValue) {
+    pub fn critical(&self, message: &str, extra: JsValue) -> Result<(), JsValue> {
         self.log(Level::Critical, message, extra)
     }
 }

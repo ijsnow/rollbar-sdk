@@ -3,12 +3,12 @@ use ::{serde::Serialize, serde_json::Value, std::collections::HashMap};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Item {
     data: Data,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Data {
     body: Body,
     level: Level,
@@ -18,7 +18,7 @@ pub struct Data {
     context: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub enum Level {
@@ -43,34 +43,34 @@ impl<Str: AsRef<str>> From<Str> for Level {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum Body {
     Message(Message),
     Trace(Trace),
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Message {
     body: String,
     #[serde(flatten)]
     extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Trace {
     frames: Vec<Frame>,
     exception: Exception,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Frame {
     filename: String,
     lineno: Option<u32>,
     colno: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Exception {
     class: String,
 }
