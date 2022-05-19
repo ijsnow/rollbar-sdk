@@ -56,3 +56,16 @@ dependencies = [
   "create-node-link",
   "link-node",
 ]
+
+[tasks.generate-cpp-header]
+command = "cxxbuild"
+args = ["src/cpp.rs", "--header", "--output", "sdk/cpp/rollbar.h"]
+
+[tasks.generate-cpp-file]
+command = "cxxbuild"
+args = ["src/cpp.rs", "--output", "sdk/cpp/rollbar.cpp"]
+
+[tasks.build-cpp]
+command = "g++"
+args = ["--cwd", "./sdk/node", "build"]
+dependencies = ["before-build-node"]

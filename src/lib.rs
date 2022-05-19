@@ -15,3 +15,9 @@ mod nodejs;
 
 #[cfg(feature = "nodejs")]
 pub use nodejs::*;
+
+//#[cfg(feature = "cpp")]
+mod cpp;
+
+//#[cfg(feature = "cpp")]
+pub use cpp::*;

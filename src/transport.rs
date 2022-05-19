@@ -35,7 +35,7 @@ use ::{
     reqwest::Client as HttpClient,
     reqwest::StatusCode,
     serde::{Deserialize, Serialize},
-    std::sync::{Arc, Mutex},
+    std::sync::{Arc, Mutex, MutexGuard},
 };
 
 use crate::{runtime, types::Item};
@@ -48,7 +48,7 @@ pub struct Transport {
     messages: Arc<Mutex<mpsc::Sender<Message>>>,
     queue_depth: Arc<Mutex<u64>>,
     client: HttpClient,
-    config: Config,
+    config: Arc<Mutex<Config>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -59,6 +59,7 @@ pub enum Message {
 
 #[derive(Debug, Clone, Serialize, Deserialize, typed_builder::TypedBuilder)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "cpp", repr(C))]
 pub struct Config {
     #[builder(setter(into))]
     access_token: String,
@@ -81,12 +82,24 @@ impl Transport {
             messages: Arc::new(Mutex::new(messages)),
             queue_depth: Arc::new(Mutex::new(0)),
             client: HttpClient::new(),
-            config,
+            config: Arc::new(Mutex::new(config)),
         };
 
         this.run(rcv_messages)?;
 
         Ok(this)
+    }
+
+    fn get_config(&self) -> Result<MutexGuard<Config>, Error> {
+        self.config.lock().map_err(|_| Error::QueueDepthLock)
+    }
+
+    pub fn set_config(&self, next: Config) -> Result<(), Error> {
+        let mut config = self.get_config()?;
+
+        *config = next;
+
+        Ok(())
     }
 
     fn send_message(&self, message: Message) -> Result<(), Error> {
@@ -150,10 +163,12 @@ impl Transport {
     }
 
     async fn transport(&self, item: Item) -> Result<(), Error> {
+        let config = self.get_config()?.clone();
+
         let result = self
             .client
-            .post(&format!("{}/{}", &self.config.uri, API_ENDPOINT))
-            .header("X-Rollbar-Access-Token", &self.config.access_token)
+            .post(&format!("{}/{}", config.uri, API_ENDPOINT))
+            .header("X-Rollbar-Access-Token", &config.access_token[..])
             .json(&item)
             .send()
             .await?;
