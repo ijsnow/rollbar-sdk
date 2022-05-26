@@ -21,7 +21,7 @@ pub struct Data {
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
-#[cfg_attr(feature = "c", repr(C))]
+#[cfg_attr(feature = "c", repr(u8))]
 pub enum Level {
     Debug,
     Info,

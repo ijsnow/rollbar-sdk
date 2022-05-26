@@ -1,1 +1,6 @@
 build
+.env
+sdk/wasm
+sdk/node/index.node
+sdk/node/index.js
+sdk/node/index.d.ts

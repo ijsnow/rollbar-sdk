@@ -14,5 +14,7 @@ int main() {
         return 1;
     }
 
-    rollbar::log(&transport, rollbar::Level::Debug, "hello from cpp");
+    rollbar::log(transport, rollbar::LevelCompat::Debug, "hello from cpp");
+
+    rollbar::shutdown(transport);
 }
