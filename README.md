@@ -57,7 +57,7 @@ cargo make run-nodejs-example
 
 ## Running c++
 
-[`./examples/pp`](./examples/cpp) contains a simple c++ program where this library is consumed as a dynamic library. Feel free to fiddle with the program at [`./examples/cpp/main.cpp`.](./examples/cpp/main.cpp) To see it in action, run the following:
+[`./examples/cpp`](./examples/cpp) contains a simple c++ program where this library is consumed as a dynamic library. Feel free to fiddle with the program at [`./examples/cpp/main.cpp`.](./examples/cpp/main.cpp) To see it in action, run the following:
 
 ```shell
 cargo make run-cpp-example
