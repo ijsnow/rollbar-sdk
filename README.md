@@ -24,7 +24,7 @@ For node, the library uses [`neon-bindings`](https://neon-bindings.com/) to faci
 - [`wasm-pack`](https://rustwasm.github.io/wasm-pack/installer/) for building to web assembly.
 - A modern version of `nodejs`
 - `python2` must be executable in your `$PATH`. It is a dependency of `node-gyp` which is a tool used by node for managaging native addon modules.
-- To handle dependency management for c/c++, this project uses cmake. Ensure you have at least version 3.19 installed.
+- To handle dependency management for c/c++, this project uses [cmake](https://cmake.org/). Ensure you have at least version 3.19 installed.
 - To make things easier, this project uses `cargo-make` to run tasks. Install with:
 
 ```
