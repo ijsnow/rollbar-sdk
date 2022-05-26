@@ -1,15 +1,23 @@
-use libc::c_char;
-use std::ffi::{CStr, CString};
+mod runtime;
+mod transport;
+mod types;
 
-#[no_mangle]
-pub extern "C" fn greet(name: *const c_char) -> *mut c_char {
-    let c_str = unsafe {
-        assert!(!name.is_null());
+pub use self::transport::{Config, Transport};
 
-        CStr::from_ptr(name)
-    };
+#[cfg(target_arch = "wasm32")]
+mod wasm;
 
-    let name = c_str.to_str().unwrap();
+#[cfg(target_arch = "wasm32")]
+pub use wasm::*;
 
-    CString::new(format!("Hello, {}", name)).unwrap().into_raw()
-}
+#[cfg(feature = "nodejs")]
+mod nodejs;
+
+#[cfg(feature = "nodejs")]
+pub use nodejs::*;
+
+#[cfg(feature = "c")]
+mod c;
+
+#[cfg(feature = "c")]
+pub use c::*;

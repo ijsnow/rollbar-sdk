@@ -1,12 +1,12 @@
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CARGO_CMD cargo build)
+    set(CARGO_CMD cargo build --features c)
     set(TARGET_DIR "debug")
 else ()
-    set(CARGO_CMD cargo build --release)
+    set(CARGO_CMD cargo build --release --features c)
     set(TARGET_DIR "release")
 endif ()
 
-set(ROLLBAR_LIB "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_DIR}/librollbar.a")
+set(ROLLBAR_LIB "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_DIR}/librollbar.dylib")
 
 add_custom_target(rollbar ALL
     COMMENT "Compiling rollbar module"

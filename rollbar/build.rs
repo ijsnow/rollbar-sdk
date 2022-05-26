@@ -13,7 +13,7 @@ fn main() {
         .to_string();
 
     let config = Config {
-        namespace: Some(String::from("ffi")),
+        namespace: Some(String::from(package_name)),
         language: cbindgen::Language::C,
         cpp_compat: true,
         ..Default::default()
