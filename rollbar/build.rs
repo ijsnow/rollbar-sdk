@@ -15,6 +15,7 @@ fn main() {
     let config = Config {
         namespace: Some(String::from("ffi")),
         language: cbindgen::Language::C,
+        cpp_compat: true,
         ..Default::default()
     };
 

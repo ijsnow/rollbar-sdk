@@ -1,6 +1,8 @@
 #include <iostream>
+#include "rollbar.h"
 
 int main() {
-    std::cout << "Hello World!";
+    char *message = rollbar::greet("there");
+    std::cout << message;
     return 0;
 }
