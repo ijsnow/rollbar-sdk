@@ -27,7 +27,10 @@ impl Instance {
     pub fn shutdown(mut cx: FunctionContext) -> JsResult<JsUndefined> {
         let instance = cx.this().downcast_or_throw::<JsBox<Instance>, _>(&mut cx)?;
 
-        instance.transport.shutdown();
+        instance
+            .transport
+            .shutdown()
+            .or_else(|e| cx.throw_error(e.to_string()))?;
 
         Ok(cx.undefined())
     }
@@ -50,7 +53,10 @@ impl Instance {
 
         let item = Item::from((level, message.value(&mut cx), extra));
 
-        instance.transport.send(item);
+        instance
+            .transport
+            .send(item)
+            .or_else(|e| cx.throw_error(e.to_string()))?;
 
         Ok(cx.undefined())
     }

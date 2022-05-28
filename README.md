@@ -10,11 +10,13 @@ This repository contains a rust library that contains logic to send items to Rol
 
 ## Architecture
 
-`rollbar-sdk` is a single library (not a rust workspace) that contains code that knows how to communicate with (for now) web assembly and nodejs runtimes.
+`rollbar` is a rust library that contains code that knows how to communicate with multiple runtimes.
 
 This library uses `wasm-pack` to build a directory that can be used as a `node_module`. The standard `wasm-bindgen` library is used for the glue between the web assembly runtime and the rust runtime. Both of the mentioned tools are supported by the Rust Webassembly Working Group which is supported by a number of companies including Mozilla.
 
 For node, the library uses [`neon-bindings`](https://neon-bindings.com/) to facilitate communication between the rust runtime and the node runtime. It's supported by a number of companies including 1Password for their desktop (Electron) application.
+
+For C and other languages that have c compatible ffi's, a c library is made available and a header file is generated using [`cbindgen`.](https://github.com/eqrion/cbindgen)
 
 ## See it in action
 

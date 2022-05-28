@@ -14,8 +14,6 @@ pub enum Error {
     TrySend(#[from] futures::channel::mpsc::TrySendError<Message>),
     #[error("Send: {0}")]
     Send(#[from] futures::channel::mpsc::SendError),
-    #[error("Shutdown: did not gracefully shutdown")]
-    Shutdown,
     #[error("Runtime: {0}")]
     Runtime(#[from] crate::runtime::Error),
     #[error("Http: {0}")]
@@ -28,6 +26,8 @@ pub enum Error {
     PayloadTooLarge,
     #[error("MissingInfo: the api did not receive enough information for this item.")]
     MissingInfo,
+    #[error("Shutdown with errors:\n {0}")]
+    Shutdown(String),
 }
 
 use ::{
@@ -47,6 +47,7 @@ const API_ENDPOINT: &'static str = "api/1/item";
 pub struct Transport {
     messages: Arc<Mutex<mpsc::Sender<Message>>>,
     queue_depth: Arc<Mutex<u64>>,
+    errors: Arc<Mutex<Vec<Error>>>,
     client: HttpClient,
     config: Config,
 }
@@ -81,6 +82,7 @@ impl Transport {
         let this = Self {
             messages: Arc::new(Mutex::new(messages)),
             queue_depth: Arc::new(Mutex::new(0)),
+            errors: Arc::new(Mutex::new(vec![])),
             client: HttpClient::new(),
             config,
         };
@@ -123,7 +125,18 @@ impl Transport {
             }
         }
 
-        Ok(())
+        match self.errors.lock() {
+            Ok(errors) if errors.len() > 0 => {
+                let mut batch = String::new();
+
+                for error in &errors[..] {
+                    batch.push_str(&format!("{}\n", error));
+                }
+
+                Err(Error::Shutdown(batch))
+            }
+            _ => Ok(()),
+        }
     }
 
     fn run(&self, mut messages: mpsc::Receiver<Message>) -> Result<(), Error> {
@@ -133,10 +146,32 @@ impl Transport {
             while let Some(message) = messages.next().await {
                 match message {
                     Message::Item(item) => {
-                        if this.transport(item).await.is_err() {
-                            // TODO: Decide what to do here. Try to restart library? Write to stderr? Ignore?
-                            break;
+                        if let Err(error) = this.transport(item).await {
+                            let mut errors = match this.errors.lock() {
+                                Ok(errors) => errors,
+                                _ => continue,
+                            };
+
+                            errors.push(error);
                         }
+
+                        let mut queue_depth =
+                            match this.queue_depth.lock().map_err(|_| Error::QueueDepthLock) {
+                                Ok(queue_depth) => queue_depth,
+                                Err(error) => {
+                                    eprintln!("{}", error);
+                                    continue;
+                                }
+                            };
+
+                        *queue_depth =
+                            match queue_depth.checked_sub(1).ok_or(Error::QueueDepthOutOfSync) {
+                                Ok(next) => next,
+                                Err(error) => {
+                                    eprintln!("{}", error);
+                                    continue;
+                                }
+                            };
                     }
                     Message::Shutdown => {
                         messages.close();
@@ -158,12 +193,6 @@ impl Transport {
             .json(&item)
             .send()
             .await?;
-
-        let mut queue_depth = self.queue_depth.lock().map_err(|_| Error::QueueDepthLock)?;
-
-        *queue_depth = queue_depth
-            .checked_sub(1)
-            .ok_or(Error::QueueDepthOutOfSync)?;
 
         match result.status() {
             // TODO: truncate payload... but truncate what?

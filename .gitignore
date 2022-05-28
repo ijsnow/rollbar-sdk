@@ -1,6 +1,7 @@
 build
 .env
-sdk/wasm
-sdk/node/index.node
-sdk/node/index.js
-sdk/node/index.d.ts
+lib/wasm
+lib/node/index.node
+lib/node/index.js
+lib/node/index.d.ts
+**/target

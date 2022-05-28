@@ -2,11 +2,11 @@ env_files = [".env"]
 
 [tasks.build-wasm]
 command = "wasm-pack"
-args = ["build", "--out-dir", "../sdk/wasm", "rollbar"]
+args = ["build", "--out-dir", "../lib/wasm", "rollbar"]
 
 [tasks.create-wasm-link]
 command = "yarn"
-args = ["--cwd", "./sdk/wasm", "link"]
+args = ["--cwd", "./lib/wasm", "link"]
 
 [tasks.link-wasm]
 command = "yarn"
@@ -14,16 +14,16 @@ args = ["--cwd", "./examples/nextjs", "link", "rollbar"]
 
 [tasks.before-build-node]
 command = "yarn"
-args = ["--cwd", "./sdk/node", "install"]
+args = ["--cwd", "./lib/node", "install"]
 
 [tasks.build-node]
 command = "yarn"
-args = ["--cwd", "./sdk/node", "build"]
+args = ["--cwd", "./lib/node", "build"]
 dependencies = ["before-build-node"]
 
 [tasks.create-node-link]
 command = "yarn"
-args = ["--cwd", "./sdk/node", "link"]
+args = ["--cwd", "./lib/node", "link"]
 
 [tasks.link-node]
 command = "yarn"
@@ -57,21 +57,21 @@ dependencies = [
   "link-node",
 ]
 
-[tasks.make-c-workspace]
+[tasks.make-cpp-workspace]
 command = "mkdir"
 args = ["-p", "build"]
 
-[tasks.prepare-c-workspace]
+[tasks.prepare-cpp-workspace]
 command = "cmake"
 cwd = "build"
 args = [".."]
-dependencies = ["make-c-workspace"]
+dependencies = ["make-cpp-workspace"]
 
-[tasks.compile-c-example]
+[tasks.compile-cpp-example]
 command = "make"
 cwd = "build"
-dependencies = ["prepare-c-workspace"]
+dependencies = ["prepare-cpp-workspace"]
 
-[tasks.run-c-example]
+[tasks.run-cpp-example]
 command = "build/examples/cpp/example-cpp"
-dependencies = ["compile-c-example"]
+dependencies = ["compile-cpp-example"]
