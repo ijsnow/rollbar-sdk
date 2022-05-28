@@ -67,6 +67,10 @@ pub struct Config {
     #[builder(default = Config::default_uri())]
     #[serde(default = "Config::default_uri")]
     pub uri: String,
+    #[builder(setter(into), default = Option::None)]
+    pub code_version: Option<String>,
+    #[builder(setter(into), default = Option::None)]
+    pub environment: Option<String>,
 }
 
 impl Config {
@@ -145,7 +149,9 @@ impl Transport {
         let fut = async move {
             while let Some(message) = messages.next().await {
                 match message {
-                    Message::Item(item) => {
+                    Message::Item(mut item) => {
+                        this.prepare_item(&mut item);
+
                         if let Err(error) = this.transport(item).await {
                             let mut errors = match this.errors.lock() {
                                 Ok(errors) => errors,
@@ -183,6 +189,16 @@ impl Transport {
         runtime::spawn(fut)?;
 
         Ok(())
+    }
+
+    fn prepare_item(&self, item: &mut Item) {
+        if let Some(environment) = &self.config.environment {
+            item.data.environment = Some(environment.clone());
+        }
+
+        if let Some(code_version) = &self.config.code_version {
+            item.data.code_version = Some(code_version.clone());
+        }
     }
 
     async fn transport(&self, item: Item) -> Result<(), Error> {

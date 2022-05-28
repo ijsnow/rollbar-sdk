@@ -5,17 +5,21 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Item {
-    data: Data,
+    pub data: Data,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Data {
-    body: Body,
-    level: Level,
+    pub body: Body,
+    pub level: Level,
     #[serde(skip_serializing_if = "Option::is_none")]
-    language: Option<String>,
+    pub language: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    context: Option<String>,
+    pub context: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub environment: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -89,6 +93,8 @@ impl<AsStr: Into<String>> From<(Level, AsStr, HashMap<String, Value>)> for Item 
                 level,
                 context: None,
                 language: None,
+                code_version: None,
+                environment: None,
             },
         }
     }
@@ -115,6 +121,8 @@ mod tests {
                 level: Level::Info,
                 language: None,
                 context: None,
+                code_version: None,
+                environment: None,
             },
         };
 

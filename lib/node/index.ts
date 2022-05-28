@@ -21,6 +21,7 @@ const criticalAsync = promisify(critical)
 interface Config {
     accessToken: string
     endpoint?: string
+    codeVersion?: string
 }
 
 type Level = 'debug' | 'info' | 'warning' | 'error' | 'critical'
